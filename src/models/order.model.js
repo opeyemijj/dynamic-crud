@@ -3,9 +3,10 @@ module.exports = {
     tableName: "orders",
     fields: {
       id: { type: "integer", primary: true, autoIncrement: true },
-      order_id: { type: "string", required: true, label: "Order ID" },
-      customer: { type: "string", required: true, unique: true, label: "Customer" },
-      order_date: { type: "timestamp", required: true, hidden: false, label: "Order Date" },
+      order_id: { type: "string", required: true, label: "Order ID", transform:"money" },
+      customer: { type: "relation", required: true, label: "Customer", relation: { model: "users", field: "id", display: "name, email", type: "single" },  transform: "mask"
+    },
+      order_date: { type: "timestamp", required: true, hidden: false, label: "Order Date", transform: { type: "datetime", format: "DD/MM/YYYY HH:mm", timezone: "UTC" } },
       status: { type: "enum", values: ["Open", "Closed"], default: "Open", label: "Order Status" }
     },
     ui: {
@@ -23,4 +24,16 @@ module.exports = {
       user: ["read"]
     }
   };
-  
+
+  // TRANSFORMATION
+  // uppercase
+  // lowercase
+  // capitalize
+  // titlecase
+  // money
+  // comma
+  // datetime
+  // comma
+  // percentage
+  // mask
+                       

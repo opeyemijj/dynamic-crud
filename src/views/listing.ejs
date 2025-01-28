@@ -24,45 +24,103 @@
     </div>
 
     <table class="table table-bordered">
-        <thead>
+      <thead>
+        <tr>
+          <% model.ui.table.forEach(field => { %>
+            <th>
+              <a href="?sort=<%= field %>&order=<%= sortField === field && sortOrder === 'asc' ? 'desc' : 'asc' %>">
+                <%= model.fields[field].label || field %>
+                <% if (sortField === field) { %>
+                  <%= sortOrder === 'asc' ? '▲' : '▼' %>
+                <% } %>
+              </a>
+            </th>
+          <% }); %>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% data.forEach(row => { %>
           <tr>
             <% model.ui.table.forEach(field => { %>
-              <th>
-                <a href="?sort=<%= field %>&order=<%= sortField === field && sortOrder === 'asc' ? 'desc' : 'asc' %>">
-                  <%= model.fields[field].label || field %>
-                  <% if (sortField === field) { %>
-                    <%= sortOrder === 'asc' ? '▲' : '▼' %>
-                  <% } %>
-                </a>
-              </th>
-            <% }); %>
-            <th class="text-center">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% data.forEach(row => { %>
-            <tr>
-              <% model.ui.table.forEach(field => { %>
-                <td><%= row[field] %></td>
-              <% }); %>
-              <td class="text-center">
-                <a href="/<%= model.modelName %>/edit/<%= row.id %>" class="btn btn-warning btn-sm">Edit</a>
-                <a href="/<%= model.modelName %>/delete/<%= row.id %>" class="btn btn-danger btn-sm">Delete</a>
-              </td>
-            </tr>
-          <% }); %>
-        </tbody>
-      </table>
+              <td>
+                <% 
+                  let transform = model.fields[field]?.transform;
+                  let value = row[field] || "";
 
-      <nav>
-        <ul class="pagination justify-content-center">
-          <% for (let i = 1; i <= Math.ceil(total / limit); i++) { %>
-            <li class="page-item <%= currentPage === i ? 'active' : '' %>">
-              <a class="page-link" href="?page=<%= i %>&limit=<%= limit %>"><%= i %></a>
-            </li>
-          <% } %>
-        </ul>
-      </nav>
+                  if (model.fields[field]?.relation) { 
+                    let displayFields = model.fields[field].relation.display.split(',').map(f => f.trim());
+                    let relatedItem = relatedData[field]?.find(rel => rel[model.fields[field].relation.field] == row[field]);
+                    value = relatedItem ? displayFields.map(f => relatedItem[f]).join(' ') : 'N/A';
+                  } 
+
+                  if (typeof transform === 'string') {
+                    switch (transform) {
+                      case 'uppercase': 
+                        value = value.toUpperCase(); 
+                        break;
+                      case 'lowercase': 
+                        value = value.toLowerCase(); 
+                        break;
+                      case 'titlecase': 
+                        value = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase(); 
+                        break;
+                      case 'trim': 
+                        value = value.trim(); 
+                        break;
+                      case 'money': 
+                        value = parseFloat(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); 
+                        break;
+                      case 'comma': 
+                        value = parseFloat(value).toLocaleString(); 
+                        break;
+                      case 'percentage': 
+                        value = `${(parseFloat(value) * 100).toFixed(2)}%`; 
+                        break;
+                      case 'mask': 
+                        value = '**** **** **** ' + value.slice(-4); 
+                        break;
+                    }
+                  } else if (typeof transform === 'object' && transform.type === 'datetime') {
+                    let format = transform.format || 'YYYY-MM-DD HH:mm';
+                    let timezone = transform.timezone || 'UTC';
+                    let date = new Date(value);
+                    const formatDate = (date, format) => {
+                      const map = {
+                        YYYY: date.getFullYear(),
+                        MM: String(date.getMonth() + 1).padStart(2, '0'),
+                        DD: String(date.getDate()).padStart(2, '0'),
+                        HH: String(date.getHours()).padStart(2, '0'),
+                        mm: String(date.getMinutes()).padStart(2, '0')
+                      };
+                
+                      return format.replace(/YYYY|MM|DD|HH|mm|A/g, matched => map[matched]);
+                    };
+                
+                    value = formatDate(date, format);
+                  }
+                %>
+                <%= value %>
+              </td>
+            <% }); %>
+            <td class="text-center">
+              <a href="/<%= model.modelName %>/edit/<%= row.id %>" class="btn btn-warning btn-sm">Edit</a>
+              <a href="/<%= model.modelName %>/delete/<%= row.id %>" class="btn btn-danger btn-sm">Delete</a>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+
+    <nav>
+      <ul class="pagination justify-content-center">
+        <% for (let i = 1; i <= Math.ceil(total / limit); i++) { %>
+          <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+            <a class="page-link" href="?page=<%= i %>&limit=<%= limit %>"><%= i %></a>
+          </li>
+        <% } %>
+      </ul>
+    </nav>
   </div>
 </body>
 </html>

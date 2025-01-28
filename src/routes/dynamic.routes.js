@@ -14,6 +14,10 @@ const loadModel = (modelPath) => {
 // Route to render listing view
 router.get('/:model', async (req, res) => {
   const model = loadModel(req.params.model);
+  if (!model) {
+    return res.status(404).send('Model not found');
+  }
+  
   // Get query params
   const search = req.query.search || '';
   const sortField = req.query.sort || 'id';
@@ -23,19 +27,20 @@ router.get('/:model', async (req, res) => {
   const offset = (page - 1) * limit;
 
   const { data, total } = await crudController.getAll(model, search, sortField, sortOrder, limit, offset);
+  const relatedData = await crudController.getRelatedData(model);
 
   res.render('listing', { 
-      title: `List of ${model.tableName}`, 
-      model, 
-      data, 
-      total, 
-      currentPage: page, 
-      limit, 
-      search, 
-      sortField, 
-      sortOrder 
-    });
-
+    title: `List of ${model.tableName}`, 
+    model, 
+    data, 
+    total, 
+    currentPage: page, 
+    limit, 
+    search, 
+    sortField, 
+    sortOrder, 
+    relatedData
+  });
 });
 
 // Route to render form for creating a new record
@@ -44,7 +49,8 @@ router.get('/:model/create', async (req, res) => {
   if (!model) {
     return res.status(404).send('Model not found');
   }
-  res.render('dynamic', { title: `Create ${model.tableName}`, model, record: {} });
+  const relatedData = await crudController.getRelatedData(model);
+  res.render('dynamic', { title: `Create ${model.tableName}`, model, record: {}, relatedData });
 });
 
 // Handle form submission for creating a new record
@@ -57,8 +63,12 @@ router.post('/:model/create', async (req, res) => {
   res.redirect(`/${req.params.model}`);
 });
 
+// Route to delete a record
 router.get('/:model/delete/:id', async (req, res) => {
   const model = loadModel(req.params.model);
+  if (!model) {
+    return res.status(404).send('Model not found');
+  }
   await crudController.remove(model, req.params.id);
   res.redirect(`/${req.params.model}`);
 });
@@ -74,7 +84,8 @@ router.get('/:model/edit/:id', async (req, res) => {
   if (!record) {
     return res.status(404).send('Record not found');
   }
-  res.render('dynamic', { title: `Edit ${model.tableName}`, model, record });
+  const relatedData = await crudController.getRelatedData(model);
+  res.render('dynamic', { title: `Edit ${model.tableName}`, model, record, relatedData });
 });
 
 // Handle form submission for updating a record

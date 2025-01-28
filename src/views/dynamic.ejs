@@ -33,6 +33,18 @@
                   <% }); %>
                 </select>
                 <% break; %>
+                <% case 'relation': %>
+                <select name="<%= field %>" class="form-control" <%= fieldData.relation.type === 'multi' ? 'multiple' : '' %>>
+                  <% relatedData[field].forEach(option => { 
+                    let displayFields = fieldData.relation.display.split(',').map(f => option[f.trim()]).join(' ');
+                  %>
+                    <option value="<%= option[fieldData.relation.field] %>" 
+                      <%= record?.[field] == option[fieldData.relation.field] ? 'selected' : '' %>>
+                      <%= displayFields %>
+                    </option>
+                  <% }); %>
+                </select>
+                <% break; %>
                 <% default: %>
                 <div class="input-group">
                   <input 
